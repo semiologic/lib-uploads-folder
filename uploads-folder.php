@@ -159,11 +159,11 @@ class uploads_folder {
 			return;
 		
 		update_post_meta($post->ID, '_upload_dir', $subdir);
-
+		
 		$attachments = get_children(
 			array(
 				'post_parent' => $post->ID,
-				'post_type' => 'attachment'
+				'post_type' => 'attachment',
 				)
 			);
 		
@@ -171,7 +171,7 @@ class uploads_folder {
 		
 		if ( $attachments ) {
 			$upload_path = uploads_folder::get_path();
-			$rel_path = '/' . substr($upload_path, strlen(ABSPATH));
+			$rel_upload_path = '/' . substr($upload_path, strlen(ABSPATH));
 			
 			if ( !wp_mkdir_p("$upload_path/$subdir") )
 				return;
@@ -232,10 +232,10 @@ class uploads_folder {
 					
 					# edit post_content
 					$find = ( ( $old_path != '.' )
-						? "$rel_path/$old_path/$file"
-						: "$rel_path/$file"
+						? "$rel_upload_path/$old_path/$file"
+						: "$rel_upload_path/$file"
 						);
-					$repl = "$rel_path/$new_path/$file";
+					$repl = "$rel_upload_path/$new_path/$file";
 					
 					$post->post_content = str_replace(
 						$find,
