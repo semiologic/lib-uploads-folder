@@ -33,6 +33,11 @@ class uploads_folder {
 		if ( wp_is_post_revision($post_id) )
 			return $uploads;
 		
+		$post = get_post($post_id);
+		
+		if ( !in_array($post->post_type, array('post', 'page')) )
+			return $uploads;
+		
 		$subdir = get_post_meta($post_id, '_upload_dir', true);
 		
 		if ( $subdir && $uploads['subdir'] != "/$subdir" ) {
