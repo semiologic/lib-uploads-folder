@@ -5,6 +5,8 @@
  * Version: 2.0
  */
 
+if ( !defined('sem_uploads_folder_debug') )
+	define('sem_uploads_folder_debug', false);
 
 /**
  * uploads_folder
@@ -77,17 +79,16 @@ class uploads_folder {
 	 **/
 
 	function get_path() {
-		if ( defined('UPLOADS') ) {
+		if ( defined('UPLOADS') )
 			return ABSPATH . UPLOADS;
-		}
 		
-		$path = get_option( 'upload_path' );
+		$path = get_option('upload_path');
 		$path = trim($upload_path);
 		if ( !$path )
 			$path = WP_CONTENT_DIR . '/uploads';
 		
 		// $path is (maybe) relative to ABSPATH
-		$path = path_join( ABSPATH, $path );
+		$path = path_join(ABSPATH, $path);
 		
 		return $path;
 	} # get_path()
@@ -139,15 +140,15 @@ class uploads_folder {
 		case 'post':
 			if ( !$post->post_name || !$post->post_date || defined('DOING_AJAX') )
 				return;
-		
+			
 			$subdir = date('Y/m/d/', strtotime($post->post_date)) . $post->post_name;
 			break;
 		case 'page':
 			if ( !$post->post_name || defined('DOING_AJAX') )
 				return;
-
+			
 			$subdir = $post->post_name;;
-
+			
 			$parent = $post;
 			while ( $parent->post_parent != 0 ) {
 				$parent = get_post($parent->post_parent);
@@ -163,7 +164,8 @@ class uploads_folder {
 		if ( $subdir == get_post_meta($post->ID, '_upload_dir', true) )
 			return;
 		
-		update_post_meta($post->ID, '_upload_dir', $subdir);
+		if ( !sem_uploads_folder_debug )
+			update_post_meta($post->ID, '_upload_dir', $subdir);
 		
 		$attachments = get_children(
 			array(
@@ -173,6 +175,7 @@ class uploads_folder {
 			);
 		
 		$old_paths = array();
+		$new_paths = array();
 		
 		if ( $attachments ) {
 			$upload_path = uploads_folder::get_path();
@@ -208,13 +211,15 @@ class uploads_folder {
 				
 				# check files
 				$is_writable = true;
+				$is_conflict = false;
 				foreach ( $files as $file ) {
 					$is_writable &= is_writable("$upload_path/$old_path/$file");
+					$is_conflict |= file_exists("$upload_path/$new_path/$file");
 				}
 				
-				if ( !$is_writable )
+				if ( !$is_writable || $is_conflict )
 					continue;
-					
+				
 				# process files
 				$update_db = false;
 				
