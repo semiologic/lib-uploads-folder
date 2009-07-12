@@ -240,6 +240,11 @@ class uploads_folder {
 							$meta['file'] = "$new_path/$file";
 							update_post_meta($att_id, '_wp_attachment_metadata', $meta);
 						}
+						$wpdb->query("
+							UPDATE	$wpdb->posts
+							SET		guid = '" . $wpdb->escape(get_option('siteurl') . "$rel_upload_path/$new_path/$file") . "'
+							WHERE	ID = " . intval($att_id)
+							);
 					}
 					
 					# edit post_content
