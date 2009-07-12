@@ -286,5 +286,16 @@ class uploads_folder {
 			}
 		}
 	} # set_upload_dir()
+	
+	
+	/**
+	 * reset()
+	 *
+	 * @return void
+	 **/
+
+	function reset() {
+		delete_post_meta_by_key('_upload_dir');
+	} # reset()
 } # uploads_folder
 ?>
