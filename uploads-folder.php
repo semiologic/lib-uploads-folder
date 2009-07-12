@@ -222,6 +222,8 @@ class uploads_folder {
 				
 				# process files
 				$update_db = false;
+				$find = array();
+				$repl = array();
 				
 				foreach ( $files as $key => $file ) {
 					# move files
@@ -241,26 +243,71 @@ class uploads_folder {
 					}
 					
 					# edit post_content
-					$find = ( ( $old_path != '.' )
+					$find[] = ( ( $old_path != '.' )
 						? "$rel_upload_path/$old_path/$file"
 						: "$rel_upload_path/$file"
 						);
-					$repl = "$rel_upload_path/$new_path/$file";
-					
-					$post->post_content = str_replace(
-						$find,
-						$repl,
-						$post->post_content,
-						$count);
-					$update_db |= $count;
+					$repl[] = "$rel_upload_path/$new_path/$file";
 				}
-					
+				
+				$post->post_excerpt = str_replace(
+					$find,
+					$repl,
+					$post->post_excerpt,
+					$count);
+				$update_db |= $count;
+				
+				$post->post_content = str_replace(
+					$find,
+					$repl,
+					$post->post_content,
+					$count);
+				$update_db |= $count;
+				
 				# update post
 				if ( $update_db ) {
 					$wpdb->query("
 						UPDATE	$wpdb->posts
-						SET		post_content = '" . $wpdb->escape($post->post_content) . "'
+						SET		post_content = '" . $wpdb->escape($post->post_content) . "',
+								post_excerpt = '" . $wpdb->escape($post->post_excerpt) . "'
 						WHERE	ID = " . intval($post->ID)
+						);
+				}
+				
+				$where_sql = '';
+				foreach ( $find as $file ) {
+					if ( $where_sql )
+						$where_sql .= ' OR ';
+					$where_sql .= "post_content LIKE '%" . like_escape($wpdb->escape($file)) . "%'"
+						. " OR post_excerpt LIKE '%" . like_escape($wpdb->escape($file)) . "%'";
+				}
+				
+				$posts = $wpdb->get_results("
+					SELECT	ID,
+							post_content,
+							post_excerpt
+					FROM	$wpdb->posts
+					WHERE	( $where_sql )
+					AND		post_status <> 'inherit'
+					AND		ID <> " . intval($post->ID)
+					);
+				
+				foreach ( $posts as $extra ) {
+					$extra->post_excerpt = str_replace(
+						$find,
+						$repl,
+						$extra->post_excerpt);
+					
+					$extra->post_content = str_replace(
+						$find,
+						$repl,
+						$extra->post_content);
+					
+					$wpdb->query("
+						UPDATE	$wpdb->posts
+						SET		post_content = '" . $wpdb->escape($extra->post_content) . "',
+								post_excerpt = '" . $wpdb->escape($extra->post_excerpt) . "'
+						WHERE	ID = " . intval($extra->ID)
 						);
 				}
 			}
