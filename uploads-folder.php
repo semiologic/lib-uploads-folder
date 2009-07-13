@@ -255,19 +255,20 @@ class uploads_folder {
 					$repl[] = "$rel_upload_path/$new_path/$file";
 				}
 				
+				foreach ( $find as $foo ) {
+					$update_db |= strpos($post->post_excerpt, $foo) !== false
+						|| strpos($post->post_content, $foo) !== false;
+				}
+				
 				$post->post_excerpt = str_replace(
 					$find,
 					$repl,
-					$post->post_excerpt,
-					$count);
-				$update_db |= $count;
+					$post->post_excerpt);
 				
 				$post->post_content = str_replace(
 					$find,
 					$repl,
-					$post->post_content,
-					$count);
-				$update_db |= $count;
+					$post->post_content);
 				
 				# update post
 				if ( $update_db ) {
