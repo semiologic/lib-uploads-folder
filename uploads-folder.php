@@ -26,7 +26,12 @@ class uploads_folder {
 	 **/
 
 	function filter($uploads) {
-		if ( !isset($_POST['post_id']) || $_POST['post_id'] <= 0 ) {
+		if ( in_the_loop() ) {
+			$post_id = get_the_ID();
+		} elseif ( is_singular() ) {
+			global $wp_the_query;
+			$post_id = $wp_the_query->get_queried_object_id();
+		} elseif ( !isset($_POST['post_id']) || $_POST['post_id'] <= 0 ) {
 			return $uploads;
 		} else {
 			$post_id = $_POST['post_id'];
