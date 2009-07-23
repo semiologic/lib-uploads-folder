@@ -31,10 +31,16 @@ class uploads_folder {
 		} elseif ( is_singular() ) {
 			global $wp_the_query;
 			$post_id = $wp_the_query->get_queried_object_id();
-		} elseif ( !isset($_POST['post_id']) || $_POST['post_id'] <= 0 ) {
-			return $uploads;
-		} else {
+		} elseif ( !empty($_POST['post_id']) ) {
+			if ( $_POST['post_id'] < 0 )
+				return $uploads;
 			$post_id = $_POST['post_id'];
+		} elseif ( !empty($_GET['post_id']) ) {
+			if ( $_GET['post_id'] < 0 )
+				return $uploads;
+			$post_id = $_GET['post_id'];
+		} else {
+			return $uploads;
 		}
 		
 		if ( wp_is_post_revision($post_id) )
