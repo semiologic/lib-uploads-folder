@@ -14,33 +14,33 @@ if ( !defined('sem_uploads_folder_debug') )
  * @package Uploads Folder
  **/
 
-add_filter('upload_dir', array('uploads_folder', 'filter'));
-add_filter('save_post', array('uploads_folder', 'save_entry'));
-
 class uploads_folder {
 	/**
 	 * filter()
 	 *
 	 * @param array $uploads
+	 * @param int $post_id
 	 * @return array $uploads
 	 **/
 
-	function filter($uploads) {
-		if ( in_the_loop() ) {
-			$post_id = get_the_ID();
-		} elseif ( is_singular() ) {
-			global $wp_the_query;
-			$post_id = $wp_the_query->get_queried_object_id();
-		} elseif ( !empty($_POST['post_id']) ) {
-			if ( $_POST['post_id'] < 0 )
+	function filter($uploads, $post_id = null) {
+		if ( !$post_id ) {
+			if ( in_the_loop() ) {
+				$post_id = get_the_ID();
+			} elseif ( is_singular() ) {
+				global $wp_the_query;
+				$post_id = $wp_the_query->get_queried_object_id();
+			} elseif ( !empty($_POST['post_id']) ) {
+				if ( $_POST['post_id'] < 0 )
+					return $uploads;
+				$post_id = $_POST['post_id'];
+			} elseif ( !empty($_GET['post_id']) ) {
+				if ( $_GET['post_id'] < 0 )
+					return $uploads;
+				$post_id = $_GET['post_id'];
+			} else {
 				return $uploads;
-			$post_id = $_POST['post_id'];
-		} elseif ( !empty($_GET['post_id']) ) {
-			if ( $_GET['post_id'] < 0 )
-				return $uploads;
-			$post_id = $_GET['post_id'];
-		} else {
-			return $uploads;
+			}
 		}
 		
 		if ( wp_is_post_revision($post_id) )
@@ -367,4 +367,7 @@ class uploads_folder {
 		delete_post_meta_by_key('_upload_dir');
 	} # reset()
 } # uploads_folder
+
+add_filter('upload_dir', array('uploads_folder', 'filter'));
+add_filter('save_post', array('uploads_folder', 'save_entry'));
 ?>
