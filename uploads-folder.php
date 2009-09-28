@@ -351,7 +351,7 @@ class uploads_folder {
 		$old_paths = array_diff($old_paths, array('.'));
 		if ( $old_paths ) {
 			foreach ( $old_paths as $old_path ) {
-					uploads_folder::clean_path("$upload_path/$old_path");
+				uploads_folder::clean_path("$upload_path/$old_path");
 			}
 		}
 	} # set_upload_dir()
