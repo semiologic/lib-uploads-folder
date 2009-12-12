@@ -2,7 +2,7 @@
 /*
  * Uploads Folder
  * Author: Denis de Bernardy <http://www.mesoconcepts.com>
- * Version: 2.0
+ * Version: 2.0.1 alpha
  */
 
 if ( !defined('sem_uploads_folder_debug') )
@@ -161,7 +161,7 @@ class uploads_folder {
 			$subdir = $post->post_name;;
 			
 			$parent = $post;
-			while ( $parent->post_parent != 0 ) {
+			while ( $parent->post_parent && $parent->ID != $parent->post_parent ) {
 				$parent = get_post($parent->post_parent);
 				if ( !$parent->post_name )
 					return;
