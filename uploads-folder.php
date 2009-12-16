@@ -2,7 +2,7 @@
 /*
  * Uploads Folder
  * Author: Denis de Bernardy <http://www.mesoconcepts.com>
- * Version: 2.0.1 alpha
+ * Version: 2.0.1 RC
  */
 
 if ( !defined('sem_uploads_folder_debug') )
