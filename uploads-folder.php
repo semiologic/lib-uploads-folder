@@ -2,7 +2,7 @@
 /*
  * Uploads Folder
  * Author: Denis de Bernardy <http://www.mesoconcepts.com>
- * Version: 2.0.1
+ * Version: 2.0.2 beta
  */
 
 if ( !defined('sem_uploads_folder_debug') )
@@ -295,8 +295,8 @@ class uploads_folder {
 				foreach ( $find as $file ) {
 					if ( $where_sql )
 						$where_sql .= ' OR ';
-					$where_sql .= "post_content LIKE '%" . like_escape($wpdb->escape($file)) . "%'"
-						. " OR post_excerpt LIKE '%" . like_escape($wpdb->escape($file)) . "%'";
+					$where_sql .= "post_content LIKE '%" . $wpdb->escape(addcslashes($file, '%_\\')) . "%'"
+						. " OR post_excerpt LIKE '%" . $wpdb->escape(addcslashes($file, '%_\\')) . "%'";
 				}
 				
 				$posts = $wpdb->get_results("
