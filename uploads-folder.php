@@ -253,7 +253,7 @@ class uploads_folder {
 						}
 						$wpdb->query("
 							UPDATE	$wpdb->posts
-							SET		guid = '" . $wpdb->escape(get_option('siteurl') . "$rel_upload_path/$new_path/$file") . "'
+							SET		guid = '" . $wpdb->_real_escape(get_option('siteurl') . "$rel_upload_path/$new_path/$file") . "'
 							WHERE	ID = " . intval($att_id)
 							);
 					}
@@ -285,8 +285,8 @@ class uploads_folder {
 				if ( $update_db ) {
 					$wpdb->query("
 						UPDATE	$wpdb->posts
-						SET		post_content = '" . $wpdb->escape($post->post_content) . "',
-								post_excerpt = '" . $wpdb->escape($post->post_excerpt) . "'
+						SET		post_content = '" . $wpdb->_real_escape($post->post_content) . "',
+								post_excerpt = '" . $wpdb->_real_escape($post->post_excerpt) . "'
 						WHERE	ID = " . intval($post->ID)
 						);
 				}
@@ -295,8 +295,8 @@ class uploads_folder {
 				foreach ( $find as $file ) {
 					if ( $where_sql )
 						$where_sql .= ' OR ';
-					$where_sql .= "post_content LIKE '%" . $wpdb->escape(addcslashes($file, '%_\\')) . "%'"
-						. " OR post_excerpt LIKE '%" . $wpdb->escape(addcslashes($file, '%_\\')) . "%'";
+					$where_sql .= "post_content LIKE '%" . $wpdb->_real_escape(addcslashes($file, '%_\\')) . "%'"
+						. " OR post_excerpt LIKE '%" . $wpdb->_real_escape(addcslashes($file, '%_\\')) . "%'";
 				}
 				
 				$posts = $wpdb->get_results("
@@ -322,8 +322,8 @@ class uploads_folder {
 					
 					$wpdb->query("
 						UPDATE	$wpdb->posts
-						SET		post_content = '" . $wpdb->escape($extra->post_content) . "',
-								post_excerpt = '" . $wpdb->escape($extra->post_excerpt) . "'
+						SET		post_content = '" . $wpdb->_real_escape($extra->post_content) . "',
+								post_excerpt = '" . $wpdb->_real_escape($extra->post_excerpt) . "'
 						WHERE	ID = " . intval($extra->ID)
 						);
 				}
