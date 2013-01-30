@@ -2,7 +2,7 @@
 /*
  * Uploads Folder
  * Author: Denis de Bernardy <http://www.mesoconcepts.com>
- * Version: 2.0.2
+ * Version: 2.1
  */
 
 if ( !defined('sem_uploads_folder_debug') )
@@ -93,7 +93,7 @@ class uploads_folder {
 		if ( defined('UPLOADS') )
 			return ABSPATH . UPLOADS;
 		
-		$path = get_option('upload_path');
+		$upload_path = get_option('upload_path');
 		$path = trim($upload_path);
 		if ( !$path )
 			$path = WP_CONTENT_DIR . '/uploads';
@@ -119,7 +119,7 @@ class uploads_folder {
 		$handle = @opendir($path);
 		
 		if ( !$handle )
-			return;
+			return false;
 		
 		$rm = true;
 		
@@ -186,7 +186,6 @@ class uploads_folder {
 			);
 		
 		$old_paths = array();
-		$new_paths = array();
 		
 		if ( $attachments ) {
 			$upload_path = uploads_folder::get_path();
