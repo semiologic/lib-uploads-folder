@@ -1,8 +1,8 @@
 <?php
 /*
  * Uploads Folder
- * Author: Denis de Bernardy <http://www.mesoconcepts.com>
- * Version: 2.1
+ * Author: Denis de Bernardy & Mike Koepke <http://www.semiologic.com>
+ * Version: 2.2
  */
 
 if ( !defined('sem_uploads_folder_debug') )
@@ -15,7 +15,18 @@ if ( !defined('sem_uploads_folder_debug') )
  **/
 
 class uploads_folder {
-	/**
+    /**
+     * uploads_folder()
+     */
+    function uploads_folder() {
+        add_filter('upload_dir', array($this, 'filter'));
+        add_filter('save_post', array($this, 'save_entry'));
+
+        register_activation_hook(__FILE__, array($this, 'reset'));
+        register_deactivation_hook(__FILE__, array($this, 'reset'));
+    }
+
+    /**
 	 * filter()
 	 *
 	 * @param array $uploads
@@ -42,30 +53,30 @@ class uploads_folder {
 				return $uploads;
 			}
 		}
-		
+
 		if ( wp_is_post_revision($post_id) )
 			return $uploads;
-		
+
 		$post = get_post($post_id);
-		
+
 		if ( !in_array($post->post_type, array('post', 'page')) )
 			return $uploads;
-		
+
 		$subdir = get_post_meta($post_id, '_upload_dir', true);
-		
+
 		if ( $subdir && $uploads['subdir'] != "/$subdir" ) {
 			if ( !wp_mkdir_p( $uploads['basedir'] . "/$subdir") )
 				return $uploads;
-			
+
 			$uploads['subdir'] = "/$subdir";
 			$uploads['path'] = $uploads['basedir'] . $uploads['subdir'];
 			$uploads['url'] = $uploads['baseurl'] . $uploads['subdir'];
 		}
-		
+
 		return $uploads;
 	} # filter()
-	
-	
+
+
 	/**
 	 * save_entry()
 	 *
@@ -76,13 +87,13 @@ class uploads_folder {
 	function save_entry($post_id) {
 		if ( !$_POST || wp_is_post_revision($post_id) || !current_user_can('edit_post', $post_id) )
 			return;
-		
+
 		$post = get_post($post_id);
-		
+
 	 	uploads_folder::set_upload_dir($post);
 	} # save_entry()
-	
-	
+
+
 	/**
 	 * get_path()
 	 *
@@ -92,19 +103,19 @@ class uploads_folder {
 	function get_path() {
 		if ( defined('UPLOADS') )
 			return ABSPATH . UPLOADS;
-		
+
 		$upload_path = get_option('upload_path');
 		$path = trim($upload_path);
 		if ( !$path )
 			$path = WP_CONTENT_DIR . '/uploads';
-		
+
 		// $path is (maybe) relative to ABSPATH
 		$path = path_join(ABSPATH, $path);
-		
+
 		return $path;
 	} # get_path()
-	
-	
+
+
 	/**
 	 * clean_path()
 	 *
@@ -115,30 +126,30 @@ class uploads_folder {
 	function clean_path($path) {
 		if ( !is_dir($path) || !is_writable($path) )
 			return false;
-		
+
 		$handle = @opendir($path);
-		
+
 		if ( !$handle )
 			return false;
-		
+
 		$rm = true;
-		
+
 		while ( ( $file = readdir($handle) ) !== false ) {
 			if ( in_array($file, array('.', '..')) )
 				continue;
-			
+
 			$rm &= uploads_folder::clean_path("$path/$file");
-			
+
 			if ( !$rm )
 				break;
 		}
-		
+
 		closedir($handle);
-		
+
 		return $rm && @rmdir($path);
 	} # clean_path()
-	
-	
+
+
 	/**
 	 * set_upload_dir()
 	 *
@@ -151,15 +162,15 @@ class uploads_folder {
 		case 'post':
 			if ( !$post->post_name || !$post->post_date || defined('DOING_AJAX') )
 				return;
-			
+
 			$subdir = date('Y/m/d/', strtotime($post->post_date)) . $post->post_name;
 			break;
 		case 'page':
 			if ( !$post->post_name || defined('DOING_AJAX') )
 				return;
-			
+
 			$subdir = $post->post_name;;
-			
+
 			$parent = $post;
 			while ( $parent->post_parent && $parent->ID != $parent->post_parent ) {
 				$parent = get_post($parent->post_parent);
@@ -171,46 +182,46 @@ class uploads_folder {
 		default:
 			return;
 		}
-		
+
 		if ( $subdir == get_post_meta($post->ID, '_upload_dir', true) )
 			return;
-		
+
 		if ( !sem_uploads_folder_debug )
 			update_post_meta($post->ID, '_upload_dir', $subdir);
-		
+
 		$attachments = get_children(
 			array(
 				'post_parent' => $post->ID,
 				'post_type' => 'attachment',
 				)
 			);
-		
+
 		$old_paths = array();
-		
+
 		if ( $attachments ) {
 			$upload_path = uploads_folder::get_path();
 			$rel_upload_path = '/' . substr($upload_path, strlen(ABSPATH));
-			
+
 			if ( !wp_mkdir_p("$upload_path/$subdir") )
 				return;
-			
+
 			global $wpdb;
-			
+
 			foreach ( array_keys($attachments) as $att_id ) {
 				$file = get_post_meta($att_id, '_wp_attached_file', true);
 				$meta = get_post_meta($att_id, '_wp_attachment_metadata', true);
-				
+
 				if ( !file_exists("$upload_path/$file") )
 					continue;
-				
+
 				# fetch paths
 				$old_path = dirname($file);
 				$new_path = $subdir;
-				
+
 				# skip if path is unchanged
 				if ( $new_path == $old_path )
 					continue;
-				
+
 				# fetch files
 				$files = array(0 => basename($file));
 				if ( is_array($meta) && isset($meta['file']) ) {
@@ -218,7 +229,7 @@ class uploads_folder {
 						$files[] = $size['file'];
 					}
 				}
-				
+
 				# check files
 				$is_writable = true;
 				$is_conflict = false;
@@ -226,22 +237,22 @@ class uploads_folder {
 					$is_writable &= is_writable("$upload_path/$old_path/$file");
 					$is_conflict |= file_exists("$upload_path/$new_path/$file");
 				}
-				
+
 				if ( !$is_writable || $is_conflict )
 					continue;
-				
+
 				# process files
 				$update_db = false;
 				$find = array();
 				$repl = array();
-				
+
 				foreach ( $files as $key => $file ) {
 					# move files
 					@rename(
 						"$upload_path/$old_path/$file",
 						"$upload_path/$new_path/$file"
 						);
-					
+
 					# update meta
 					if ( $key === 0 ) {
 						$old_paths[] = $old_path;
@@ -256,7 +267,7 @@ class uploads_folder {
 							WHERE	ID = " . intval($att_id)
 							);
 					}
-					
+
 					# edit post_content
 					$find[] = ( ( $old_path != '.' )
 						? "$rel_upload_path/$old_path/$file"
@@ -264,22 +275,22 @@ class uploads_folder {
 						);
 					$repl[] = "$rel_upload_path/$new_path/$file";
 				}
-				
+
 				foreach ( $find as $foo ) {
 					$update_db |= strpos($post->post_excerpt, $foo) !== false
 						|| strpos($post->post_content, $foo) !== false;
 				}
-				
+
 				$post->post_excerpt = str_replace(
 					$find,
 					$repl,
 					$post->post_excerpt);
-				
+
 				$post->post_content = str_replace(
 					$find,
 					$repl,
 					$post->post_content);
-				
+
 				# update post
 				if ( $update_db ) {
 					$wpdb->query("
@@ -289,7 +300,7 @@ class uploads_folder {
 						WHERE	ID = " . intval($post->ID)
 						);
 				}
-				
+
 				$where_sql = '';
 				foreach ( $find as $file ) {
 					if ( $where_sql )
@@ -297,7 +308,7 @@ class uploads_folder {
 					$where_sql .= "post_content LIKE '%" . $wpdb->_real_escape(addcslashes($file, '%_\\')) . "%'"
 						. " OR post_excerpt LIKE '%" . $wpdb->_real_escape(addcslashes($file, '%_\\')) . "%'";
 				}
-				
+
 				$posts = $wpdb->get_results("
 					SELECT	ID,
 							post_content,
@@ -307,18 +318,18 @@ class uploads_folder {
 					AND		post_status <> 'inherit'
 					AND		ID <> " . intval($post->ID)
 					);
-				
+
 				foreach ( $posts as $extra ) {
 					$extra->post_excerpt = str_replace(
 						$find,
 						$repl,
 						$extra->post_excerpt);
-					
+
 					$extra->post_content = str_replace(
 						$find,
 						$repl,
 						$extra->post_content);
-					
+
 					$wpdb->query("
 						UPDATE	$wpdb->posts
 						SET		post_content = '" . $wpdb->_real_escape($extra->post_content) . "',
@@ -328,7 +339,7 @@ class uploads_folder {
 				}
 			}
 		}
-		
+
 		# process children
 		if ( $post->post_type == 'page' ) {
 			$children = get_children(
@@ -337,14 +348,14 @@ class uploads_folder {
 					'post_type' => 'page',
 					)
 				);
-			
+
 			if ( $children ) {
 				foreach ( $children as $child ) {
 					uploads_folder::set_upload_dir($child);
 				}
 			}
 		}
-		
+
 		# clean up
 		$old_paths = array_unique($old_paths);
 		$old_paths = array_diff($old_paths, array('.'));
@@ -354,8 +365,8 @@ class uploads_folder {
 			}
 		}
 	} # set_upload_dir()
-	
-	
+
+
 	/**
 	 * reset()
 	 *
@@ -367,6 +378,5 @@ class uploads_folder {
 	} # reset()
 } # uploads_folder
 
-add_filter('upload_dir', array('uploads_folder', 'filter'));
-add_filter('save_post', array('uploads_folder', 'save_entry'));
+$uploads_folder = new uploads_folder();
 ?>
